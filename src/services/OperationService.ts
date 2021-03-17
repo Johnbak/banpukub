@@ -3,10 +3,11 @@ import { getRepository } from 'typeorm';
 import { ConfigFile } from '../entity/configFile.entity';
 const dayjs = require('dayjs');
 const XLSX = require('xlsx');
-var customParseFormat = require('dayjs/plugin/customParseFormat');
+const customParseFormat = require('dayjs/plugin/customParseFormat');
 dayjs.extend(customParseFormat);
 
-var _ = require('lodash');
+const _ = require('lodash');
+const numeral = require('numeral');
 
 class OperationService {
   public async getAll(): Promise<ConfigFile[]> {
@@ -50,6 +51,7 @@ class OperationService {
           console.log(item.configFileFormatDate.datetimeFormat);
           item.configFileMappings.forEach((value) => {
             console.log(value.key);
+            console.log(value.filename)
             let excelValue = excelExtract(
               value.sheet,
               file.data,
@@ -139,8 +141,9 @@ const excelExtract = (
   key: string
 ) => {
   console.log(sheetNum);
-  // "M/d/YY h:mm" case : Kurokawa
-  const workBook = XLSX.read(data,{dateNF:"HH:mm:ss" });
+  // "M/d/YY HH:mm" 
+  const workBook = XLSX.read(data,{dateNF:"M/d/YY HH:mm" });
+  //  const workBook = XLSX.read(data);
   //  const workBook = XLSX.read(data,{dateNF:dateFormat, cellDates:true, cellStyles:true });
   const sheetName = workBook.SheetNames[sheetNum - 1];
   const sheet = workBook.Sheets[sheetName];
@@ -148,10 +151,14 @@ const excelExtract = (
   columnDate = columnDate - 1;
   rowStart = rowStart - 1;
   columnValue = columnValue - 1;
-  // rowStop = 50
+  // rowStop = XLSX.utils.decode_range(sheet['!ref']);
+  // console.log(typeof rowStop)
+  let demo = XLSX.utils.decode_range(sheet['!ref']);
+  // console.log(demo)
+  // console.log(demo.e.r)
   let values: Value[] = [];
 
-  for (let i = rowStart; i < rowStop; i++) {
+  for (let i = rowStart; i < demo.e.r; i++) {
     let cell_address = { c: columnValue, r: i };
     let data = XLSX.utils.encode_cell(cell_address);
     let cell_date = { c: columnDate, r: i };
@@ -168,7 +175,7 @@ const excelExtract = (
         dayjs(date, 'YYYY-MM-DD').format('YYYYMMDD') +
         dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).format('HHmm')
     );
-
+    console.log(XLSX.utils.format_cell(sheet[dateKub]))
     let value: Value = {
       id:
         plantName +
@@ -186,9 +193,9 @@ const excelExtract = (
         'YYYY-MM-DDHH:mm'
       ).format('YYYY-MM-DD HH:mm'),
       radiation:
-        key !== Type.PWR ? Number(XLSX.utils.format_cell(sheet[data])) : 0,
+        key !== Type.PWR ? numeral(XLSX.utils.format_cell(sheet[data]))._value : 0,
       powerGeneration:
-        key === Type.PWR ? Number(XLSX.utils.format_cell(sheet[data])) : 0,
+        key === Type.PWR ? numeral(XLSX.utils.format_cell(sheet[data]))._value : 0,
       type: key
     };
 
@@ -199,7 +206,7 @@ const excelExtract = (
   console.log('Date: ', plantName + '-' + dateString);
 
   console.log('_____________________________________________________');
-  console.log(values);
+  // console.log(values);
   return values;
 };
 
