@@ -51,7 +51,26 @@ class OperationService {
           console.log(item.configFileFormatDate.datetimeFormat);
           item.configFileMappings.forEach((value) => {
             console.log(value.key);
-            console.log(value.filename)
+            console.log(value.filename);
+            console.log(file.name);
+
+            if (value.filename) {
+              let checkFilename: boolean = file.name.includes(value.filename);
+              console.log(checkFilename);
+              if (!checkFilename) {
+                return; // out
+              }
+            }
+            // if (!value.filename) {
+            //   if (!file.name.includes(value.filename)) {
+            //     console.log('xyz_xyz_xyz_xyz_xyz_xyz_xyz');
+            //     console.log(value.filename);
+            //     console.log(file.name);
+            //     console.log('xyz_xyz_xyz_xyz_xyz_xyz_xyz');
+            //     return;
+            //   }
+            // }
+
             let excelValue = excelExtract(
               value.sheet,
               file.data,
@@ -141,8 +160,8 @@ const excelExtract = (
   key: string
 ) => {
   console.log(sheetNum);
-  // "M/d/YY HH:mm" 
-  const workBook = XLSX.read(data,{dateNF:"M/d/YY HH:mm" });
+  // "M/d/YY HH:mm"
+  const workBook = XLSX.read(data, { dateNF: 'M/d/YY HH:mm' });
   //  const workBook = XLSX.read(data);
   //  const workBook = XLSX.read(data,{dateNF:dateFormat, cellDates:true, cellStyles:true });
   const sheetName = workBook.SheetNames[sheetNum - 1];
@@ -153,29 +172,33 @@ const excelExtract = (
   columnValue = columnValue - 1;
   // rowStop = XLSX.utils.decode_range(sheet['!ref']);
   // console.log(typeof rowStop)
-  let demo = XLSX.utils.decode_range(sheet['!ref']);
+  let sheetRef = XLSX.utils.decode_range(sheet['!ref']);
+  if (!rowStop) {
+    //null rowStop from config
+    rowStop = sheetRef.e.r;
+  }
   // console.log(demo)
   // console.log(demo.e.r)
   let values: Value[] = [];
 
-  for (let i = rowStart; i < demo.e.r; i++) {
+  for (let i = rowStart; i < rowStop; i++) {
     let cell_address = { c: columnValue, r: i };
     let data = XLSX.utils.encode_cell(cell_address);
     let cell_date = { c: columnDate, r: i };
     let dateKub = XLSX.utils.encode_cell(cell_date);
-    console.log(
-      XLSX.utils.format_cell(sheet[data]) +
-        '   ' +
-        XLSX.utils.format_cell(sheet[dateKub]) +
-        '    ' +
-        dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).get('hour') +
-        '    ' +
-        plantName +
-        '-' +
-        dayjs(date, 'YYYY-MM-DD').format('YYYYMMDD') +
-        dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).format('HHmm')
-    );
-    console.log(XLSX.utils.format_cell(sheet[dateKub]))
+    // console.log(
+    //   XLSX.utils.format_cell(sheet[data]) +
+    //     '   ' +
+    //     XLSX.utils.format_cell(sheet[dateKub]) +
+    //     '    ' +
+    //     dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).get('hour') +
+    //     '    ' +
+    //     plantName +
+    //     '-' +
+    //     dayjs(date, 'YYYY-MM-DD').format('YYYYMMDD') +
+    //     dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).format('HHmm')
+    // );
+    // console.log(XLSX.utils.format_cell(sheet[dateKub]))
     let value: Value = {
       id:
         plantName +
@@ -193,9 +216,13 @@ const excelExtract = (
         'YYYY-MM-DDHH:mm'
       ).format('YYYY-MM-DD HH:mm'),
       radiation:
-        key !== Type.PWR ? numeral(XLSX.utils.format_cell(sheet[data]))._value : 0,
+        key !== Type.PWR
+          ? numeral(XLSX.utils.format_cell(sheet[data]))._value
+          : 0,
       powerGeneration:
-        key === Type.PWR ? numeral(XLSX.utils.format_cell(sheet[data]))._value : 0,
+        key === Type.PWR
+          ? numeral(XLSX.utils.format_cell(sheet[data]))._value
+          : 0,
       type: key
     };
 
