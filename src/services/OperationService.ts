@@ -29,6 +29,13 @@ class OperationService {
         console.log(plant[0]);
         const config = await this.getConfigByPlantName(plant[0]);
         console.log(config.length);
+
+        const configDto: ConfigFile[] = await this.getConfigByPlantNameAndKey(
+          file.name,
+          'Radiation' //key
+        );
+        console.log(configDto);
+
         console.log(
           '==================================END FILE==================================='
         );
@@ -120,27 +127,34 @@ class OperationService {
     let configPlantName = await configFileRepository.find({
       plantName: plant
     });
-
-    const user = await createQueryBuilder("enigma_config_file","configFile")
-    .leftJoinAndSelect("configFile.configFileMappings", "mapping")
-    .leftJoinAndSelect("configFile.configFileFormatDate", "mappingDate")
-    .where("configFile.plantName = :name", { name: plant })
-    .andWhere("mapping.key = :key", { key: "Radiation" })
-    .getOne()!
-    
-    
-    console.log(`Datakub :  ${configPlantName}`)
-    console.log(`Datakub :  ${user}`)
-    console.log(user)
-    // console.log(user.configFileMappings.lenght)
-    // a.forEach(a=>{
-    //  console.log(a.configFileFormatDate.datetimeFormat)
-    //  console.log(a.configFileMappings.forEach(b=>b.key))
-    // })
-
-  
-
     return configPlantName;
+  }
+
+  public async getConfigByPlantNameAndKey(
+    filename: string,
+    key: string
+  ): Promise<ConfigFile[]> {
+    try {
+      if (filename && key) {
+        const plant = filename.split("_",1)
+        //Query by PlantName + key
+        const result: ConfigFile[] = await getRepository(ConfigFile)
+          .createQueryBuilder('configFile')
+          .leftJoinAndSelect('configFile.configFileMappings', 'mapping')
+          .leftJoinAndSelect('configFile.configFileFormatDate', 'mappingDate')
+          .where('configFile.plantName = :name', { name: plant })
+          .andWhere('mapping.key = :key', { key: key })
+          .getMany()
+          .then((response) => response)
+          .catch((error) => error);
+        return result;
+      } else {
+        const error = new Error('invalid input');
+        throw error;
+      }
+    } catch (e) {
+      throw e;
+    }
   }
 }
 
