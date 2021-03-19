@@ -11,20 +11,7 @@ const numeral = require('numeral');
 
 class OperationService {
   public async getAll(): Promise<ConfigFile[]> {
-    // let ccccccc = new ConfigFile();
     const configFileRepository = getRepository(ConfigFile);
-    // const answer = await configFileRepository.find();
-    // // console.log(answer);
-    // answer.forEach((item, index) => {
-    //   console.log(item.plantName);
-    //   console.log(item.configFileFormatDate.datetimeFormat);
-    //   item.configFileMappings.forEach((value) => {
-    //     console.log(value.columnPoint);
-    //     console.log(value.rowStart);
-    //     console.log(value.rowStop);
-    //   });
-    //   console.log('==========================');
-    // });
     return await configFileRepository.find();
   }
 
@@ -33,8 +20,7 @@ class OperationService {
     console.log(data.files);
 
     let values: any = [];
-    let multiFile = [];
-    multiFile = checkMultipleFile(data.files);
+    let multiFile = checkMultipleFile(data.files);
     if (multiFile === undefined || multiFile.length === 0) {
     } else {
       for (const file of multiFile) {
@@ -61,15 +47,6 @@ class OperationService {
                 return; // out
               }
             }
-            // if (!value.filename) {
-            //   if (!file.name.includes(value.filename)) {
-            //     console.log('xyz_xyz_xyz_xyz_xyz_xyz_xyz');
-            //     console.log(value.filename);
-            //     console.log(file.name);
-            //     console.log('xyz_xyz_xyz_xyz_xyz_xyz_xyz');
-            //     return;
-            //   }
-            // }
 
             let excelValue = excelExtract(
               value.sheet,

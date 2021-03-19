@@ -11,9 +11,6 @@ export class OperationController {
     // return operationService.getAll();
     return operationService.getConfigByPlantName('Awaji');
   }
-  // async one(request: Request, response: Response, next: NextFunction) {
-  //   return this.configFileRepository.findOne(request.params.id);
-  // }
 
   async save(request: Request, response: Response, next: NextFunction) {
     // return operationService.createUser(request.body);
@@ -30,12 +27,6 @@ export class OperationController {
     let data = operationService.upload(request, request.body.date);
     console.log(request.body.date);
     response.status(200);
-    // response.json({ success: 'ok kub' });
     return data;
   }
-
-  // async remove(request: Request, response: Response, next: NextFunction) {
-  //   // let userToRemove = await this.confsigFileRepository.findOne(request.params.id);
-  //   // await this.configFileRepository.remove(userToRemove);
-  // }
 }
