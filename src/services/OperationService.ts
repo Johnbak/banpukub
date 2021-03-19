@@ -1,5 +1,5 @@
 import { request } from 'express';
-import { getRepository } from 'typeorm';
+import { createQueryBuilder, getRepository } from 'typeorm';
 import { ConfigFile } from '../entity/configFile.entity';
 const dayjs = require('dayjs');
 const XLSX = require('xlsx');
@@ -120,6 +120,26 @@ class OperationService {
     let configPlantName = await configFileRepository.find({
       plantName: plant
     });
+
+    const user = await createQueryBuilder("enigma_config_file","configFile")
+    .leftJoinAndSelect("configFile.configFileMappings", "mapping")
+    .leftJoinAndSelect("configFile.configFileFormatDate", "mappingDate")
+    .where("configFile.plantName = :name", { name: plant })
+    .andWhere("mapping.key = :key", { key: "Radiation" })
+    .getOne()!
+    
+    
+    console.log(`Datakub :  ${configPlantName}`)
+    console.log(`Datakub :  ${user}`)
+    console.log(user)
+    // console.log(user.configFileMappings.lenght)
+    // a.forEach(a=>{
+    //  console.log(a.configFileFormatDate.datetimeFormat)
+    //  console.log(a.configFileMappings.forEach(b=>b.key))
+    // })
+
+  
+
     return configPlantName;
   }
 }
