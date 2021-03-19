@@ -4,6 +4,8 @@ import { ConfigFile } from '../entity/configFile.entity';
 const dayjs = require('dayjs');
 const XLSX = require('xlsx');
 const customParseFormat = require('dayjs/plugin/customParseFormat');
+import { FileUpload } from '../types/FileUpload';
+import { CheckFileType } from '../utils/ReadFile';
 dayjs.extend(customParseFormat);
 
 const _ = require('lodash');
@@ -14,7 +16,76 @@ class OperationService {
     const configFileRepository = getRepository(ConfigFile);
     return await configFileRepository.find();
   }
+  public previewList (list:Value[] , size:number, type:string):Value[]  {
+    return list;
+  }
 
+  public calculatedPowerGen(list:[], size:number, type:string, unit:string):[]{
+    return list;
+  }
+
+  public async uploadFile(file:FileUpload[], date:string) {
+    try {
+      if(file.length === 2 ) {
+
+      } else if(file.length === 1) {
+
+        // CheckFileType is CSV || XLSX
+        const fileList:FileUpload = CheckFileType(file[0]);
+
+        // GET config file
+        const getConfig:ConfigFile[][] = await Promise.all([
+          this.getConfigByPlantNameAndKey(fileList.name, Type.PWR),
+          this.getConfigByPlantNameAndKey(fileList.name, Type.RADIATION)
+        ])
+
+        // config value PowerGeneration
+        const configPWR:ConfigFile[] = getConfig[0];
+
+        // config value radiation
+        const configRADIATION:ConfigFile[] = getConfig[1];
+
+
+        // read file by config type powerGeneration
+        let excelValuePowerGeneration:Value[] = excelExtract(
+          configPWR[0].configFileMappings[0].sheet,
+          file[0].data,
+          configPWR[0].configFileMappings[0].rowStart,
+          configPWR[0].configFileMappings[0].rowStop,
+          configPWR[0].configFileMappings[0].columnPoint,
+          configPWR[0].configFileFormatDate.columnPoint,
+          configPWR[0].configFileFormatDate.datetimeFormat,
+          date,
+          configPWR[0].plantName,
+          configPWR[0].configFileMappings[0].key
+        );
+
+        // read file by config type radiation
+        // let excelValueRadiation:Value[] = excelExtract(
+        //   configRADIATION[0].configFileMappings[0].sheet,
+        //   file[0].data,
+        //   configRADIATION[0].configFileMappings[0].rowStart,
+        //   configRADIATION[0].configFileMappings[0].rowStop,
+        //   configRADIATION[0].configFileMappings[0].columnPoint,
+        //   configRADIATION[0].configFileFormatDate.columnPoint,
+        //   configRADIATION[0].configFileFormatDate.datetimeFormat,
+        //   date,
+        //   configRADIATION[0].plantName,
+        //   configRADIATION[0].configFileMappings[0].key
+        // );
+
+        console.log(configRADIATION)
+
+        const getValuePreviewPWR:Value[] =  this.previewList(excelValuePowerGeneration, configPWR.length, Type.PWR);
+
+      } else {
+        throw new Error('invalid file')
+      }
+    } catch (e) {
+      throw new Error(e.message)
+    }
+
+  }
   public async upload(request: any, date: string): Promise<Value[]> {
     const data: any = request.files;
     console.log(data.files);

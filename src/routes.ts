@@ -1,6 +1,6 @@
 import { UserController } from './controller/UserController';
 import { OperationController } from './controller/OperationController';
-
+import { FileController } from './controller/FileController';
 export const AppRoutes = [
   {
     method: 'get',
@@ -56,5 +56,11 @@ export const AppRoutes = [
     route: '/operations/uploads',
     controller: OperationController,
     action: 'upload'
-  }
+  },
+  {
+    method: 'post',
+    route: '/file',
+    controller: FileController,
+    action: 'upload'
+  },
 ];
