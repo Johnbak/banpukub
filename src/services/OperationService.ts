@@ -1,53 +1,105 @@
 import { request } from 'express';
 import { createQueryBuilder, getRepository } from 'typeorm';
 import { ConfigFile } from '../entity/configFile.entity';
+
 const dayjs = require('dayjs');
 const XLSX = require('xlsx');
 const customParseFormat = require('dayjs/plugin/customParseFormat');
 import { FileUpload } from '../types/FileUpload';
 import { CheckFileType } from '../utils/ReadFile';
+
 dayjs.extend(customParseFormat);
 
 const _ = require('lodash');
 const numeral = require('numeral');
 
 class OperationService {
+  private listItem: Value[] = [];
+  private listItemPreview: Value[] = [];
+  private listItemRawData: Value[] = [];
+
   public async getAll(): Promise<ConfigFile[]> {
     const configFileRepository = getRepository(ConfigFile);
     return await configFileRepository.find();
   }
-  public previewList (list:Value[] , size:number, type:string):Value[]  {
-    return list;
+
+  public previewListPowerGeneration(list: Value[]) {
+    this.listItemPreview = list;
+    return this;
   }
 
-  public calculatedPowerGen(list:[], size:number, type:string, unit:string):[]{
-    return list;
+  public calculatedPowerGen(list: Value[], size: number, type: string, unit: string) {
+    if(unit === "kWh") {
+        this.calculatedPowerGenTypeKWh(list)
+    } else {
+        this.calculatedPowerGenTypeW(list)
+    }
+    return this;
   }
 
-  public async uploadFile(file:FileUpload[], date:string) {
+  public calculatedPowerGenTypeKWh(list: Value[]){
+    this.listItem = list;
+    return this
+  }
+
+  public calculatedPowerGenTypeW(list: Value[]) {
+    this.listItem = list;
+    return this
+  }
+
+  public calculatedRadiation(size: number, type: string, Config:ConfigFile, plantName:string, date:string, rawData:any) {
+       console.log(Config)
+    // let tempList:any = []
+    // if(listConfig.length !== 0) {
+    //   // TODO: read config by index
+    //   for (const itemConfig of listConfig) {
+    //     console.log(itemConfig)
+    //     if(itemConfig.unit === 'kWh') {
+    //         // const result:Value[] =  excelExtract();
+    //     } else {
+    //
+    //     }
+    //   }
+    //
+    // } else {
+    //   throw new Error('configFile not found')
+    // }
+    return this;
+  }
+  public getValueByConfigRadiation (list:Value[], config:any ) {
+    return list
+  }
+  public calculatedRadiationTypeW(list: Value[]) {
+    return this
+  }
+  public calculatedRadiationTypeKWh(list: Value[]) {
+    return this
+  }
+
+  public async uploadFile(file: FileUpload[], date: string) {
     try {
-      if(file.length === 2 ) {
+      if (file.length === 2) {
 
-      } else if(file.length === 1) {
+      } else if (file.length === 1) {
 
-        // CheckFileType is CSV || XLSX
-        const fileList:FileUpload = CheckFileType(file[0]);
+        // TODO: CheckFileType is CSV || XLSX
+        const fileList: FileUpload = CheckFileType(file[0]);
 
-        // GET config file
-        const getConfig:ConfigFile[][] = await Promise.all([
+        // TODO: GET config file
+        const getConfig: ConfigFile[][] = await Promise.all([
           this.getConfigByPlantNameAndKey(fileList.name, Type.PWR),
           this.getConfigByPlantNameAndKey(fileList.name, Type.RADIATION)
-        ])
+        ]);
 
-        // config value PowerGeneration
-        const configPWR:ConfigFile[] = getConfig[0];
+        // TODO: config value PowerGeneration
+        const configPWR: ConfigFile[] = getConfig[0];
 
-        // config value radiation
-        const configRADIATION:ConfigFile[] = getConfig[1];
+        // TODO: config value radiation
+        const configRADIATION: ConfigFile[] = getConfig[1];
 
 
-        // read file by config type powerGeneration
-        let excelValuePowerGeneration:Value[] = excelExtract(
+        // TODO: read file by config type powerGeneration
+        let excelValuePowerGeneration: Value[] = excelExtract(
           configPWR[0].configFileMappings[0].sheet,
           file[0].data,
           configPWR[0].configFileMappings[0].rowStart,
@@ -60,32 +112,28 @@ class OperationService {
           configPWR[0].configFileMappings[0].key
         );
 
-        // read file by config type radiation
-        // let excelValueRadiation:Value[] = excelExtract(
-        //   configRADIATION[0].configFileMappings[0].sheet,
-        //   file[0].data,
-        //   configRADIATION[0].configFileMappings[0].rowStart,
-        //   configRADIATION[0].configFileMappings[0].rowStop,
-        //   configRADIATION[0].configFileMappings[0].columnPoint,
-        //   configRADIATION[0].configFileFormatDate.columnPoint,
-        //   configRADIATION[0].configFileFormatDate.datetimeFormat,
-        //   date,
-        //   configRADIATION[0].plantName,
-        //   configRADIATION[0].configFileMappings[0].key
-        // );
 
-        console.log(configRADIATION)
+        // TODO: calculated case Power generation and get Preview List
+          const sizeOfPowerGeneration = configPWR[0].configFileMappings.length;
+          const unitPowerGeneration = configPWR[0].configFileMappings[0].unit;
 
-        const getValuePreviewPWR:Value[] =  this.previewList(excelValuePowerGeneration, configPWR.length, Type.PWR);
+          this.calculatedPowerGen(excelValuePowerGeneration, sizeOfPowerGeneration, Type.PWR, unitPowerGeneration)
+            .previewListPowerGeneration(excelValuePowerGeneration)
+
+        // TODO: calculated case Radiation and get Preview List
+        const sizeOfRadiation = configRADIATION[0].configFileMappings.length;
+          this.calculatedRadiation(sizeOfRadiation, Type.RADIATION, configRADIATION[0], configRADIATION[0].plantName, date, file[0].data)
+          //   .previewList(excelValuePowerGeneration)
 
       } else {
-        throw new Error('invalid file')
+        throw new Error('invalid file');
       }
     } catch (e) {
-      throw new Error(e.message)
+      throw new Error(e.message);
     }
 
   }
+
   public async upload(request: any, date: string): Promise<Value[]> {
     const data: any = request.files;
     console.log(data.files);
@@ -207,7 +255,7 @@ class OperationService {
   ): Promise<ConfigFile[]> {
     try {
       if (filename && key) {
-        const plant = filename.split("_",1)
+        const plant = filename.split('_', 1);
         //Query by PlantName + key
         const result: ConfigFile[] = await getRepository(ConfigFile)
           .createQueryBuilder('configFile')
@@ -227,6 +275,7 @@ class OperationService {
       throw e;
     }
   }
+
 }
 
 const excelExtract = (
@@ -292,9 +341,9 @@ const excelExtract = (
       plantName: plantName,
       dateTime: dayjs(
         date +
-          dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).format(
-            'HH:mm'
-          ),
+        dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).format(
+          'HH:mm'
+        ),
         'YYYY-MM-DDHH:mm'
       ).format('YYYY-MM-DD HH:mm'),
       radiation:
