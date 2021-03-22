@@ -16,38 +16,40 @@ class OperationService {
     const configFileRepository = getRepository(ConfigFile);
     return await configFileRepository.find();
   }
-  public previewList (list:Value[] , size:number, type:string):Value[]  {
+  public previewList(list: Value[], size: number, type: string): Value[] {
     return list;
   }
 
-  public calculatedPowerGen(list:[], size:number, type:string, unit:string):[]{
+  public calculatedPowerGen(
+    list: [],
+    size: number,
+    type: string,
+    unit: string
+  ): [] {
     return list;
   }
 
-  public async uploadFile(file:FileUpload[], date:string) {
+  public async uploadFile(file: FileUpload[], date: string) {
     try {
-      if(file.length === 2 ) {
-
-      } else if(file.length === 1) {
-
+      if (file.length === 2) {
+      } else if (file.length === 1) {
         // CheckFileType is CSV || XLSX
-        const fileList:FileUpload = CheckFileType(file[0]);
+        const fileList: FileUpload = CheckFileType(file[0]);
 
         // GET config file
-        const getConfig:ConfigFile[][] = await Promise.all([
+        const getConfig: ConfigFile[][] = await Promise.all([
           this.getConfigByPlantNameAndKey(fileList.name, Type.PWR),
           this.getConfigByPlantNameAndKey(fileList.name, Type.RADIATION)
-        ])
+        ]);
 
         // config value PowerGeneration
-        const configPWR:ConfigFile[] = getConfig[0];
+        const configPWR: ConfigFile[] = getConfig[0];
 
         // config value radiation
-        const configRADIATION:ConfigFile[] = getConfig[1];
-
+        const configRADIATION: ConfigFile[] = getConfig[1];
 
         // read file by config type powerGeneration
-        let excelValuePowerGeneration:Value[] = excelExtract(
+        let excelValuePowerGeneration: Value[] = excelExtract(
           configPWR[0].configFileMappings[0].sheet,
           file[0].data,
           configPWR[0].configFileMappings[0].rowStart,
@@ -60,31 +62,37 @@ class OperationService {
           configPWR[0].configFileMappings[0].key
         );
 
-        // read file by config type radiation
-        // let excelValueRadiation:Value[] = excelExtract(
-        //   configRADIATION[0].configFileMappings[0].sheet,
-        //   file[0].data,
-        //   configRADIATION[0].configFileMappings[0].rowStart,
-        //   configRADIATION[0].configFileMappings[0].rowStop,
-        //   configRADIATION[0].configFileMappings[0].columnPoint,
-        //   configRADIATION[0].configFileFormatDate.columnPoint,
-        //   configRADIATION[0].configFileFormatDate.datetimeFormat,
-        //   date,
-        //   configRADIATION[0].plantName,
-        //   configRADIATION[0].configFileMappings[0].key
-        // );
+        // read file by config type radiation []
+        // let excelValueRadiation: Value[] = [];
+        // for (const value of configRADIATION[0].configFileMappings) {
+        //   let excelRadiationTemp: Value[] = excelExtract(
+        //     value.sheet,
+        //     file[0].data,
+        //     value.rowStart,
+        //     value.rowStop,
+        //     value.columnPoint,
+        //     configRADIATION[0].configFileFormatDate.columnPoint,
+        //     configRADIATION[0].configFileFormatDate.datetimeFormat,
+        //     date,
+        //     configRADIATION[0].plantName,
+        //     value.key
+        //   );
+        //   excelValueRadiation = [...excelValueRadiation, ...excelRadiationTemp];
+        // }
+        // console.log(configRADIATION[0].configFileMappings.length);
+        // console.log(excelValueRadiation);
 
-        console.log(configRADIATION)
-
-        const getValuePreviewPWR:Value[] =  this.previewList(excelValuePowerGeneration, configPWR.length, Type.PWR);
-
+        const getValuePreviewPWR: Value[] = this.previewList(
+          excelValuePowerGeneration,
+          configPWR.length,
+          Type.PWR
+        );
       } else {
-        throw new Error('invalid file')
+        throw new Error('invalid file');
       }
     } catch (e) {
-      throw new Error(e.message)
+      throw new Error(e.message);
     }
-
   }
   public async upload(request: any, date: string): Promise<Value[]> {
     const data: any = request.files;
@@ -102,7 +110,6 @@ class OperationService {
         console.log(config.length);
 
         // a function that return a delayed promise
-     
 
         // const configRadia: ConfigFile[] = await this.getConfigByPlantNameAndKey(
         //   file.name,
@@ -228,7 +235,7 @@ class OperationService {
           .leftJoinAndSelect('configFile.configFileMappings', 'mapping')
           .leftJoinAndSelect('configFile.configFileFormatDate', 'mappingDate')
           .where('configFile.plantName = :name', { name: plant })
-          .andWhere('mapping.key = :key', { key: key })
+          .andWhere('mapping.key like  :key', { key: `${key}%` })
           .getMany()
           .then((response) => response)
           .catch((error) => error);
@@ -294,7 +301,7 @@ const excelExtract = (
     //     dayjs(date, 'YYYY-MM-DD').format('YYYYMMDD') +
     //     dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).format('HHmm')
     // );
-    // console.log(XLSX.utils.format_cell(sheet[dateKub]))
+    //  console.log(XLSX.utils.format_cell(sheet[dateKub]))
     let value: Value = {
       id:
         plantName +
