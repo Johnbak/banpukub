@@ -30,11 +30,25 @@ class OperationService {
         const config = await this.getConfigByPlantName(plant[0]);
         console.log(config.length);
 
-        const configDto: ConfigFile[] = await this.getConfigByPlantNameAndKey(
-          file.name,
-          'Radiation' //key
-        );
-        console.log(configDto);
+        // a function that return a delayed promise
+     
+
+        // const configRadia: ConfigFile[] = await this.getConfigByPlantNameAndKey(
+        //   file.name,
+        //   Type.RADIATION //key
+        // );
+
+        // const configPwr: ConfigFile[] = await this.getConfigByPlantNameAndKey(
+        //   file.name,
+        //   Type.PWR //key
+        // );
+
+        // Promise.all([configRadia, configPwr]).then(values => {
+        //   console.log("This is Promise START ")
+        //   console.log(values); // [3, 1337, "foo"]
+        //   console.log("This is Promise END ")
+        // });
+        // console.log(configDto);
 
         console.log(
           '==================================END FILE==================================='
@@ -136,7 +150,7 @@ class OperationService {
   ): Promise<ConfigFile[]> {
     try {
       if (filename && key) {
-        const plant = filename.split("_",1)
+        const plant = filename.split('_', 1);
         //Query by PlantName + key
         const result: ConfigFile[] = await getRepository(ConfigFile)
           .createQueryBuilder('configFile')
