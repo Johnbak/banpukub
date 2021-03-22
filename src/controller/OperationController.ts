@@ -7,9 +7,15 @@ export class OperationController {
   private configFileRepository = getRepository(ConfigFile);
 
   // https://github.com/mateusconstanzo/express-typeorm-typescript/blob/master/src/user/service.ts
-  all(): Promise<ConfigFile[]> {
+  all() {
     // return operationService.getAll();
-    return operationService.getConfigByPlantName('Awaji');
+    try {
+
+      return operationService.getConfigByPlantName('Awaji');
+      // return operationService.getAllList()
+    } catch (e) {
+
+    }
   }
 
   async save(request: Request, response: Response, next: NextFunction) {
