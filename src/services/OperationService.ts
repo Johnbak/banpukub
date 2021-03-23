@@ -65,6 +65,9 @@ class OperationService {
     return list;
   }
 
+  public calculatedRadiationMultipleFileSameName(Config: ConfigFile[], type: string, date: string, rawData: any) {
+    
+  }
 
   public calculatedRadiation(Config: ConfigFile[], type: string, date: string, rawData: any) {
     let tempList: any = [];
@@ -157,17 +160,120 @@ class OperationService {
   public calculatedRadiationByHour(list:any) {
     let tempList = [];
     for (let i = 0; i < list.length ; i++) {
-      const sumRadiation = list[i].map((v)=> v.radiation)
-        .reduce((a, b) => a+b, 0) / list[i].length/1000
+      const sumRadiation = list[i].map((v:any)=> v.radiation)
+        .reduce((a:any, b:any) => a+b, 0) / list[i].length/1000
       list[i][0].radiation = sumRadiation;
       tempList.push(list[i][0])
     }
   return tempList;
   }
+
+  public checkSameFileName(file1: string, file2: string): boolean {
+    let fileOne = file1.split('_', 1);
+    let fileTwo = file2.split('_', 1);
+    return fileOne[0] === fileTwo[0];
+  }
+
+
   public async uploadFile(file: FileUpload[], date: string) {
     try {
       if (file.length === 2) {
+        // TODO: CheckFileType is CSV || XLSX
+        const fileList: FileUpload = CheckFileType(file[0]);
+        const fileList2: FileUpload = CheckFileType(file[1]);
 
+        //TODO: Check same Filename
+        if (this.checkSameFileName(fileList.name, fileList2.name)) {
+          const getConfig: ConfigFile[][] = await Promise.all([
+            this.getConfigByPlantNameAndKeyAndFilename(
+              fileList.name,
+              Type.PWR,
+              Type.PWR_JP
+            ),
+            this.getConfigByPlantNameAndKeyAndFilename(
+              fileList2.name,
+              Type.RADIATION,
+              Type.RADIATION_JP
+            )
+          ]);
+          const configPWR: ConfigFile[] = getConfig[0];
+          const configRADIATION: ConfigFile[] = getConfig[1];
+
+          const filePwr:any = file[0].name.includes(Type.PWR_JP) ? file[0].data : file[1].data;
+
+          const fileRadiation:any = file[1].name.includes(Type.RADIATION_JP) ? file[1].data : file[0].data;
+
+          // console.log(fileRadiation)
+
+          this.calculatedPowerGen(configPWR, Type.PWR, date, filePwr);
+
+          this.calculatedRadiation(configRADIATION, Type.RADIATION, date, fileRadiation);
+
+          return this
+          // let excelValuePowerGeneration: Value[] = excelExtract(
+          //   configPWR[0].configFileMappings[0].sheet,
+          //   file[0].name.includes(Type.PWR_JP) ? file[0].data : file[1].data, 
+          //   configPWR[0].configFileMappings[0].rowStart,
+          //   configPWR[0].configFileMappings[0].rowStop,
+          //   configPWR[0].configFileMappings[0].columnPoint,
+          //   configPWR[0].configFileFormatDate.columnPoint,
+          //   configPWR[0].configFileFormatDate.datetimeFormat,
+          //   date,
+          //   configPWR[0].plantName,
+          //   configPWR[0].configFileMappings[0].key
+          // );
+          // console.log(excelValuePowerGeneration);
+        } else {
+          // TODO: GET config file
+          const getConfig: ConfigFile[][] = await Promise.all([
+            this.getConfigByPlantNameAndKey(fileList.name, Type.PWR),
+            this.getConfigByPlantNameAndKey(fileList.name, Type.RADIATION),
+            this.getConfigByPlantNameAndKey(fileList2.name, Type.PWR),
+            this.getConfigByPlantNameAndKey(fileList2.name, Type.RADIATION)
+          ]);
+
+          // TODO: config value PowerGeneration File 1
+
+          const configPWR: ConfigFile[] = getConfig[0];
+
+          // TODO: config value radiation File 1
+          const configRADIATION: ConfigFile[] = getConfig[1];
+
+          // TODO: config value PowerGeneration File 2
+          const configPWR2: ConfigFile[] = getConfig[2];
+
+          // TODO: config value radiation File 2
+          const configRADIATION2: ConfigFile[] = getConfig[3];
+
+          let excelValuePowerGeneration: Value[] = excelExtract(
+            configPWR[0].configFileMappings[0].sheet,
+            file[0].data,
+            configPWR[0].configFileMappings[0].rowStart,
+            configPWR[0].configFileMappings[0].rowStop,
+            configPWR[0].configFileMappings[0].columnPoint,
+            configPWR[0].configFileFormatDate.columnPoint,
+            configPWR[0].configFileFormatDate.datetimeFormat,
+            date,
+            configPWR[0].plantName,
+            configPWR[0].configFileMappings[0].key
+          );
+
+          let excelValuePowerGeneration2: Value[] = excelExtract(
+            configPWR2[0].configFileMappings[0].sheet,
+            file[1].data,
+            configPWR2[0].configFileMappings[0].rowStart,
+            configPWR2[0].configFileMappings[0].rowStop,
+            configPWR2[0].configFileMappings[0].columnPoint,
+            configPWR2[0].configFileFormatDate.columnPoint,
+            configPWR2[0].configFileFormatDate.datetimeFormat,
+            date,
+            configPWR2[0].plantName,
+            configPWR2[0].configFileMappings[0].key
+          );
+
+          console.log(excelValuePowerGeneration);
+          console.log(excelValuePowerGeneration2);
+        }
       } else if (file.length === 1) {
 
         // TODO: CheckFileType is CSV || XLSX
@@ -196,6 +302,7 @@ class OperationService {
         throw new Error('invalid file');
       }
     } catch (e) {
+      console.log(e.stack)
       throw new Error(e.message);
     }
 
@@ -357,7 +464,39 @@ class OperationService {
     }
   }
 
+
+  public async getConfigByPlantNameAndKeyAndFilename(
+    filename: string,
+    key: string,
+    filenameType: string
+  ): Promise<ConfigFile[]> {
+    try {
+      if (filename && key && filenameType) {
+        const plant = filename.split('_', 1);
+        filenameType = plant + '_' + filenameType;
+        //Query by PlantName + key
+        const result: ConfigFile[] = await getRepository(ConfigFile)
+          .createQueryBuilder('configFile')
+          .leftJoinAndSelect('configFile.configFileMappings', 'mapping')
+          .leftJoinAndSelect('configFile.configFileFormatDate', 'mappingDate')
+          .where('configFile.plantName = :name', { name: plant })
+          .andWhere('mapping.key like  :key', { key: `${key}%` })
+          .andWhere('mapping.filename = :filename', { filename: filenameType })
+          .getMany()
+          .then((response) => response)
+          .catch((error) => error);
+        return result;
+      } else {
+        const error = new Error('invalid input');
+        throw error;
+      }
+    } catch (e) {
+      throw e;
+    }
+  }
 }
+
+
 
 const excelExtract = (
   sheetNum: number,
@@ -470,7 +609,9 @@ enum Type {
   RADIATION = 'Radiation',
   PWR = 'PowerGeneration',
   GROUPPWR = 'GroupPowerGeneration',
-  GROUPRADIATION = 'GroupRadiation'
+  GROUPRADIATION = 'GroupRadiation',
+  PWR_JP = '電力',
+  RADIATION_JP = '気象'
 }
 
 interface Value {
