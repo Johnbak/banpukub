@@ -21,7 +21,6 @@ export class FileController {
     try {
       const file:any = req.files;
       const listKey = Object.keys(file);
-      console.log(listKey)
       let list:FileUpload[] = [];
       for (const name of listKey) {
         const fileUpload : FileUpload =  {
@@ -37,9 +36,8 @@ export class FileController {
         }
         list.push(fileUpload);
       }
-      console.log(list)
-      await operationService.uploadFile(list, '2021-06-22');
-      res.send("OK")
+      const result = await operationService.uploadFile(list, '2021-06-22');
+      res.send(result)
     } catch (e) {
       next(e)
     }
