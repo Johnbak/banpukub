@@ -14,68 +14,156 @@ const _ = require('lodash');
 const numeral = require('numeral');
 
 class OperationService {
-  private listItem: Value[] = [];
-  private listItemPreview: Value[] = [];
-  private listItemRawData: Value[] = [];
+  private listItemRadiation: Value[] = [];
+  private listItemPowerGeneration: Value[] = [];
+  private listItemRadiationPreview: Value[] = [];
+  private listItemPowerGenerationPreview: Value[] = [];
 
   public async getAll(): Promise<ConfigFile[]> {
     const configFileRepository = getRepository(ConfigFile);
     return await configFileRepository.find();
   }
 
-  public previewListPowerGeneration(list: Value[]) {
-    this.listItemPreview = list;
-    return this;
-  }
 
-  public calculatedPowerGen(list: Value[], size: number, type: string, unit: string) {
-    if(unit === "kWh") {
-        this.calculatedPowerGenTypeKWh(list)
+  public calculatedPowerGen(config:ConfigFile[], type:string, date: string, rawData: any) {
+    let tempList: any = [];
+    if(config[0].configFileMappings.length !== 0) {
+      // TODO: read config by index
+      for (const itemConfig of config[0].configFileMappings) {
+        // TODO: check unit
+        console.log(itemConfig.unit)
+        if (itemConfig.unit === 'kWh') {
+          // TODO: get value from CSV || EXEL
+          let result: Value [] = excelExtract(
+            itemConfig.sheet,
+            rawData,
+            itemConfig.rowStart,
+            itemConfig.rowStop,
+            itemConfig.columnPoint,
+            config[0].configFileFormatDate.columnPoint,
+            config[0].configFileFormatDate.datetimeFormat,
+            date,
+            config[0].plantName,
+            itemConfig.key)
+          tempList.push(this.calculatedPowerGenTypeKWh(result))
+        }
+      }
+      // TODO: merge array
+      let listValue:Value[] = [];
+      for (const value of tempList) {
+        listValue = [...listValue, ...value]
+      }
+      this.listItemPowerGenerationPreview = listValue;
+      this.listItemPowerGeneration = listValue;
+      return this;
     } else {
-        this.calculatedPowerGenTypeW(list)
+      throw new Error('config not found');
     }
-    return this;
   }
 
-  public calculatedPowerGenTypeKWh(list: Value[]){
-    this.listItem = list;
-    return this
+  public calculatedPowerGenTypeKWh(list: Value[]) {
+    return list;
   }
 
-  public calculatedPowerGenTypeW(list: Value[]) {
-    this.listItem = list;
-    return this
+
+  public calculatedRadiation(Config: ConfigFile[], type: string, date: string, rawData: any) {
+    let tempList: any = [];
+    if (Config[0].configFileMappings.length !== 0) {
+      // TODO: read config by index1
+      for (const itemConfig of Config[0].configFileMappings) {
+        if (itemConfig.unit === 'kWh') {
+          // TODO: get value from CSV || EXEL
+          let result: Value [] = excelExtract(itemConfig.sheet, rawData, itemConfig.rowStart, itemConfig.rowStop, itemConfig.columnPoint, Config[0].configFileFormatDate.columnPoint, Config[0].configFileFormatDate.datetimeFormat, date, Config[0].plantName, itemConfig.key);
+          // TODO: push to List
+          tempList.push(this.calculatedRadiationTypeKWh(result));
+        } else {
+          // TODO: get value from CSV || EXEL
+          let result: Value [] = excelExtract(itemConfig.sheet, rawData, itemConfig.rowStart, itemConfig.rowStop, itemConfig.columnPoint, Config[0].configFileFormatDate.columnPoint, Config[0].configFileFormatDate.datetimeFormat, date, Config[0].plantName, itemConfig.key);
+          // TODO: convert to Unit KWh and push to List
+          tempList.push(this.calculatedRadiationTypeW(result));
+        }
+      }
+      // TODO: merge array
+      let listValue:Value[] = [];
+      for (const value of tempList) {
+        listValue = [...listValue, ...value]
+      }
+
+      // TODO: getList Preview Radiation
+      this.listItemRadiationPreview = listValue;
+
+      // TODO: calculate Radiation
+      this.calculatedValueOfRadiation(tempList[0], Config[0].configFileMappings.length, listValue);
+      return this;
+
+    } else {
+      throw new Error('config not found');
+    }
+  }
+  public calculatedValueOfRadiation(list:Value[], size:number, totalArray:Value[]) {
+    let resultList: Value[] = [];
+    if(list.length !== 0 ) {
+      list.forEach(v => {
+        let findByTime = totalArray.filter((d) => v.dateTime === d.dateTime);
+        if (findByTime) {
+          let total = findByTime
+            .map((v) => v.radiation)
+            .reduce((a, b) => (a + b), 0)
+          v.radiation = (total/size);
+          resultList.push(v);
+        } else {
+          resultList.push(v);
+        }
+      });
+      this.listItemRadiation = resultList;
+      return this;
+    } else {
+      throw new Error("no list by config 2");
+    }
+
   }
 
-  public calculatedRadiation(size: number, type: string, Config:ConfigFile, plantName:string, date:string, rawData:any) {
-       console.log(Config)
-    // let tempList:any = []
-    // if(listConfig.length !== 0) {
-    //   // TODO: read config by index
-    //   for (const itemConfig of listConfig) {
-    //     console.log(itemConfig)
-    //     if(itemConfig.unit === 'kWh') {
-    //         // const result:Value[] =  excelExtract();
-    //     } else {
-    //
-    //     }
-    //   }
-    //
-    // } else {
-    //   throw new Error('configFile not found')
-    // }
-    return this;
-  }
-  public getValueByConfigRadiation (list:Value[], config:any ) {
-    return list
-  }
   public calculatedRadiationTypeW(list: Value[]) {
-    return this
+    // TODO check empty array
+    if(list.length === 0) {
+      //TODO: list not found calculatedRadiationTypeW
+      throw new Error("List not found")
+    }
+    // TODO : GROUP By hour
+    let tempListGroupByHour = this.groupRadiationToHour(list);
+
+    // TODO: sum radiation by hour
+    const listResult =  this.calculatedRadiationByHour(tempListGroupByHour);
+
+    return listResult;
+  }
+  public groupRadiationToHour (list: Value[]) {
+    const hour:number = 24;
+    let tempList = [];
+    const formatDate:string = `2021-01-01`; // ignore value of day finally get only hour
+  // TODO: Group by hour by start at 0:00 to 23:55
+    for (let i = 0; i < hour ; i++) {
+      const findHours = list.filter((d) => dayjs(`${formatDate} ${i}:00`).get('h') === dayjs(d.dateTime).get('h') )
+      if(findHours) {
+        tempList.push(findHours)
+      }
+    }
+  //  TODO : return new Array
+    return tempList;
   }
   public calculatedRadiationTypeKWh(list: Value[]) {
-    return this
+    return list;
   }
-
+  public calculatedRadiationByHour(list:any) {
+    let tempList = [];
+    for (let i = 0; i < list.length ; i++) {
+      const sumRadiation = list[i].map((v)=> v.radiation)
+        .reduce((a, b) => a+b, 0) / list[i].length/1000
+      list[i][0].radiation = sumRadiation;
+      tempList.push(list[i][0])
+    }
+  return tempList;
+  }
   public async uploadFile(file: FileUpload[], date: string) {
     try {
       if (file.length === 2) {
@@ -97,34 +185,13 @@ class OperationService {
         // TODO: config value radiation
         const configRADIATION: ConfigFile[] = getConfig[1];
 
-
-        // TODO: read file by config type powerGeneration
-        let excelValuePowerGeneration: Value[] = excelExtract(
-          configPWR[0].configFileMappings[0].sheet,
-          file[0].data,
-          configPWR[0].configFileMappings[0].rowStart,
-          configPWR[0].configFileMappings[0].rowStop,
-          configPWR[0].configFileMappings[0].columnPoint,
-          configPWR[0].configFileFormatDate.columnPoint,
-          configPWR[0].configFileFormatDate.datetimeFormat,
-          date,
-          configPWR[0].plantName,
-          configPWR[0].configFileMappings[0].key
-        );
-
-
-        // TODO: calculated case Power generation and get Preview List
-          const sizeOfPowerGeneration = configPWR[0].configFileMappings.length;
-          const unitPowerGeneration = configPWR[0].configFileMappings[0].unit;
-
-          this.calculatedPowerGen(excelValuePowerGeneration, sizeOfPowerGeneration, Type.PWR, unitPowerGeneration)
-            .previewListPowerGeneration(excelValuePowerGeneration)
+        // TODO: calculated case Power Gen and get Preview List
+        this.calculatedPowerGen(configPWR, Type.PWR, date, file[0].data);
 
         // TODO: calculated case Radiation and get Preview List
-        const sizeOfRadiation = configRADIATION[0].configFileMappings.length;
-          this.calculatedRadiation(sizeOfRadiation, Type.RADIATION, configRADIATION[0], configRADIATION[0].plantName, date, file[0].data)
-          //   .previewList(excelValuePowerGeneration)
+        this.calculatedRadiation(configRADIATION, Type.RADIATION, date, file[0].data);
 
+        return this;
       } else {
         throw new Error('invalid file');
       }
@@ -150,7 +217,7 @@ class OperationService {
         console.log(config.length);
 
         // a function that return a delayed promise
-     
+
 
         // const configRadia: ConfigFile[] = await this.getConfigByPlantNameAndKey(
         //   file.name,
@@ -343,15 +410,12 @@ const excelExtract = (
     //     dayjs(date, 'YYYY-MM-DD').format('YYYYMMDD') +
     //     dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).format('HHmm')
     // );
-    // console.log(XLSX.utils.format_cell(sheet[dateKub]))
     let value: Value = {
       id:
         plantName +
         '-' +
         dayjs(date, 'YYYY-MM-DD').format('YYYYMMDD') +
-        dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).format(
-          'HHmm'
-        ),
+        dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).format('HHmm'),
       plantName: plantName,
       dateTime: dayjs(
         date +
