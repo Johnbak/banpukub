@@ -336,17 +336,17 @@ class OperationService {
       } else {
         const getTemp = list.filter((d:Value) => d !== null);
         tempList.push(
-          {
+          [{
             id:  getTemp[0].plantName +
               '-' +
               dayjs(getTemp[0].dateTime, 'YYYY-MM-DD').format('YYYYMMDD') +
-              dayjs(`${i}:00`).format('HHmm'),
+              dayjs(`${i}:00`,'HH:mm').format('HHmm'),
             plantName: getTemp[0].plantName,
-            dateTime: "",
+            dateTime: dayjs(getTemp[0].dateTime).format('YYYY-MM-DD')+" "+`${i}:00`,
             radiation: 0,
             powerGeneration: 0,
             type: getTemp[0].plantName
-          }
+          }]
         )
       }
     }
@@ -377,7 +377,7 @@ class OperationService {
     for (let i = 0; i < list.length ; i++) {
       const sumRadiation = list[i].map((v:Value)=> v.radiation)
         .reduce((a:any, b:any) => a+b, 0) / list[i].length/1000
-      list[i][0].radiation = Number((Math.round(sumRadiation * 100) / 100).toFixed(2));
+      list[i][0].radiation = Math.round(sumRadiation * 100) / 100;
       list[i][0].dateTime = dayjs(list[i][0].dateTime).startOf('h').format('YYYY-MM-DD HH:mm')
       tempList.push(list[i][0])
     }
