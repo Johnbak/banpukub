@@ -10,7 +10,7 @@
       "outDir": "dist",                              
       "rootDir": "src", 
       "removeComments": true, 
-      "strict": true,  
+      "strict": false,
       "esModuleInterop": true,   
       "emitDecoratorMetadata": true,
       "experimentalDecorators": true,

@@ -8,7 +8,7 @@ const List:String[] = [
 
 export const CheckFileType = (file:FileUpload) => {
   try {
-      // check mineType of file and accept only excel & csv
+      // TODO: check mineType of file and accept only excel & csv
       if(List.find(value => value === file.mimetype)) {
         return file
       } else {
