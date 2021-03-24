@@ -91,11 +91,6 @@ class OperationService {
 
        // TODO: getList Preview Radiation
       this.listItemRadiationPreview = listValue;
-      console.log("log Test")
-      console.log(Config[0].configFileMappings.length)
-      console.log(tempList[0].length)
-      console.log(listValue.length)
-      console.log(listValue)
          // TODO: calculate Radiation
          this.calculatedValueOfRadiation(tempList[0], Config[0].configFileMappings.length, listValue);
          return this;
@@ -186,7 +181,6 @@ class OperationService {
       if(findHours.length !== 0) {
         tempList.push(findHours)
       }else{
-        console.log(i)
         const getTemp = list.filter((d:Value) => d !== null);
         tempList.push(
           [{
