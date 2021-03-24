@@ -66,7 +66,42 @@ class OperationService {
   }
 
   public calculatedRadiationMultipleFileSameName(Config: ConfigFile[], type: string, date: string, rawData: any) {
+    let tempList: any = [];
+    if (Config[0].configFileMappings.length !== 0) {
+      // TODO: read config by index1
+      for (const itemConfig of Config[0].configFileMappings) {
+        if (itemConfig.unit === 'kWh') {
+          // TODO: get value from CSV || EXEL
+          let result: Value [] = excelExtract(itemConfig.sheet, rawData, itemConfig.rowStart, itemConfig.rowStop, itemConfig.columnPoint, Config[0].configFileFormatDate.columnPoint, Config[0].configFileFormatDate.datetimeFormat, date, Config[0].plantName, itemConfig.key);
+
+          // TODO: push to List
+          tempList.push(this. calculatedRadiationTypeKWhMultipleFile(result));
+        } else {
+          // TODO: get value from CSV || EXEL
+          //let result: Value [] = excelExtract(itemConfig.sheet, rawData, itemConfig.rowStart, itemConfig.rowStop, itemConfig.columnPoint, Config[0].configFileFormatDate.columnPoint, Config[0].configFileFormatDate.datetimeFormat, date, Config[0].plantName, itemConfig.key);
+        }
+      }
     
+
+       // TODO: merge array
+       let listValue:Value[] = [];
+       for (const value of tempList) {
+         listValue = [...listValue, ...value]
+       }
+
+       // TODO: getList Preview Radiation
+      this.listItemRadiationPreview = listValue;
+      console.log("log Test")
+      console.log(Config[0].configFileMappings.length)
+      console.log(tempList[0].length)
+      console.log(listValue.length)
+      console.log(listValue)
+         // TODO: calculate Radiation
+         this.calculatedValueOfRadiation(tempList[0], Config[0].configFileMappings.length, listValue);
+         return this;
+    }else{
+      throw new Error('config not found');
+    }
   }
 
   public calculatedRadiation(Config: ConfigFile[], type: string, date: string, rawData: any) {
@@ -144,11 +179,28 @@ class OperationService {
     const hour:number = 24;
     let tempList = [];
     const formatDate:string = `2021-01-01`; // ignore value of day finally get only hour
+
   // TODO: Group by hour by start at 0:00 to 23:55
     for (let i = 0; i < hour ; i++) {
       const findHours = list.filter((d) => dayjs(`${formatDate} ${i}:00`).get('h') === dayjs(d.dateTime).get('h') )
-      if(findHours) {
+      if(findHours.length !== 0) {
         tempList.push(findHours)
+      }else{
+        console.log(i)
+        const getTemp = list.filter((d:Value) => d !== null);
+        tempList.push(
+          [{
+            id:  getTemp[0].plantName +
+              '-' +
+              dayjs(getTemp[0].dateTime, 'YYYY-MM-DD').format('YYYYMMDD') +
+              dayjs(`${i}:00`,'HH:mm').format('HHmm'),
+            plantName: getTemp[0].plantName,
+            dateTime: dayjs(getTemp[0].dateTime).format('YYYY-MM-DD')+" "+`${i}:00`,
+            radiation: 0,
+            powerGeneration: 0,
+            type: getTemp[0].plantName
+          }]
+        )
       }
     }
   //  TODO : return new Array
@@ -157,12 +209,29 @@ class OperationService {
   public calculatedRadiationTypeKWh(list: Value[]) {
     return list;
   }
+
+  public calculatedRadiationTypeKWhMultipleFile(list: Value[]) {
+     // TODO check empty array
+    if(list.length === 0) {
+      //TODO: list not found calculatedRadiationTypeW
+      throw new Error("List not found")
+    }
+
+    // TODO : GROUP By hour
+    let tempListGroupByHour = this.groupRadiationToHour(list)
+
+    // TODO: sum radiation by hour
+    const listResult =  this.calculatedRadiationByHour(tempListGroupByHour);
+    return listResult;
+  }
+
   public calculatedRadiationByHour(list:any) {
     let tempList = [];
     for (let i = 0; i < list.length ; i++) {
-      const sumRadiation = list[i].map((v:any)=> v.radiation)
+      const sumRadiation = list[i].map((v:Value)=> v.radiation)
         .reduce((a:any, b:any) => a+b, 0) / list[i].length/1000
       list[i][0].radiation = sumRadiation;
+      list[i][0].dateTime = dayjs(list[i][0].dateTime).startOf('h').format('YYYY-MM-DD HH:mm')
       tempList.push(list[i][0])
     }
   return tempList;
@@ -207,7 +276,7 @@ class OperationService {
 
           this.calculatedPowerGen(configPWR, Type.PWR, date, filePwr);
 
-          this.calculatedRadiation(configRADIATION, Type.RADIATION, date, fileRadiation);
+          this.calculatedRadiationMultipleFileSameName(configRADIATION, Type.RADIATION, date, fileRadiation);
 
           return this
           // let excelValuePowerGeneration: Value[] = excelExtract(
