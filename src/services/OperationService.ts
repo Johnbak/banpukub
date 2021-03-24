@@ -235,6 +235,7 @@ class OperationService {
             .map((v) => v.radiation)
             .reduce((a, b) => (a + b), 0)
           v.radiation = (total/size);
+          v.radiation = Number((Math.round(v.radiation * 100) / 100).toFixed(2));
           resultList.push(v);
         } else {
           resultList.push(v);
@@ -377,7 +378,7 @@ class OperationService {
     for (let i = 0; i < list.length ; i++) {
       const sumRadiation = list[i].map((v:Value)=> v.radiation)
         .reduce((a:any, b:any) => a+b, 0) / list[i].length/1000
-      list[i][0].radiation = Math.round(sumRadiation * 100) / 100;
+      list[i][0].radiation = sumRadiation;
       list[i][0].dateTime = dayjs(list[i][0].dateTime).startOf('h').format('YYYY-MM-DD HH:mm')
       tempList.push(list[i][0])
     }
