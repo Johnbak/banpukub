@@ -30,7 +30,6 @@ class OperationService {
     // let testList = listFile2[0].filter((v) => v.dateTime !== '2021-06-22 05:00')
     for (let i = 0; i < maxHours ; i++) {
       if(listFile1[0][i] || listFile2[0][i]) {
-
         if(listFile1[0][i]) {
           // เอาตัวแรกมาตั้ง
           const getHourPWR1 = dayjs(listFile1[0][i].dateTime).get('h');
