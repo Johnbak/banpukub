@@ -900,7 +900,7 @@ class OperationService {
         });
       }
 
-      console.log('test check 1 2');
+      console.log('__tests__ check 1 2');
       // console.log(values.length);
       // console.log(
       //   _.chain(values)
