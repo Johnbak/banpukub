@@ -136,6 +136,7 @@ class OperationService {
           } else {
           // TODO: case W/m^2
             tempList.push(this.calculatedPowerGenMultipleFileDiffNameTypeWattAVG(resultFile))
+            tempListPreview.push(resultFile)
           }
         }
 
@@ -143,11 +144,57 @@ class OperationService {
         //  not config for  config[i].plantName
         }
     }
-      console.log(tempList)
       let mergeArray = this.mergeListOfValue(tempList)
       let groupArray = this.sunPowerGenMultiFileCaseDiffName(mergeArray);
       this.listItemPowerGenerationPreview =this.mergeListOfValue(tempListPreview);
       this.listItemPowerGeneration = this.calculatedPowerGenCaseMultiFileByHour(groupArray);
+      return this;
+  }
+
+  public calculatedRadiationMultipleFileAndDiffName(
+    config:ConfigParameter[],
+    type: string,
+    date: string
+  ) {
+    let tempList: any[] = [];
+    let tempListPreview: any = [];
+
+    for (let i = 0; i < config.length; i++) {
+        const configMapping = config[i].config[0];
+      // TODO: read config by index
+      if(configMapping.configFileMappings.length !== 0) {
+        for (const itemConfig of configMapping.configFileMappings) {
+          // TODO: get value from CSV || EXEL
+          let resultFile: Value [] = excelExtract(
+            itemConfig.sheet,
+            config[i].file,
+            itemConfig.rowStart,
+            itemConfig.rowStop,
+            itemConfig.columnPoint,
+            configMapping.configFileFormatDate.columnPoint,
+            configMapping.configFileFormatDate.datetimeFormat,
+            date,
+            configMapping.plantName,
+            itemConfig.key);
+          if(resultFile.length <= 24) {
+          //  TODO: case Kwn/m
+            tempList.push(this.checkInputHours(resultFile))
+            tempListPreview.push(this.checkInputHours(resultFile))
+          } else {
+          // TODO: case W/m^2
+            tempListPreview.push(resultFile)
+            tempList.push(this.calculatedRadiationMultipleFileDiffNameTypeWattSUM(resultFile))
+          }
+        }
+
+        } else {
+        //  not config for  config[i].plantName
+        }
+    }
+      let mergeArray = this.mergeListOfValue(tempList)
+      let groupArray = this.sunPowerGenMultiFileCaseDiffName(mergeArray);
+      this.listItemRadiationPreview =this.mergeListOfValue(tempListPreview);
+      this.listItemRadiation = this.calculatedRadiationCaseMultiFileByHour(groupArray,tempList.length);
       return this;
   }
   public calculatedPowerGenMultipleFile(
@@ -267,6 +314,13 @@ class OperationService {
 
     return this.calculatedPowerGenByMin(listGroupByHour);
   }
+
+  public calculatedRadiationMultipleFileDiffNameTypeWattSUM(list: Value[]) {
+    const listGroupByHour: Value[] = this.groupRadiationToHour(list);
+
+    return this.calculatedRadiationByMin(listGroupByHour);
+  }
+
   public calculatedPowerGenMultipleFileTypeKWhAVG(list: Value[]) {
     const listGroupByHour: Value[] = this.groupRadiationToHour(list);
     return this.calculatedPowerGenCaseMultiFileByHour(listGroupByHour);
@@ -282,6 +336,17 @@ class OperationService {
     }
     return tempList;
   }
+
+  public calculatedRadiationByMin(list: any) {
+    let tempList = [];
+    for (let i = 0; i < list.length; i++) {
+      const sumRadiation = sum(list[i], 'radiation');
+      list[i][0].radiation = (sumRadiation/list[i].map((v: Value) => v.radiation).length)/1000;
+      tempList.push(list[i][0]);
+    }
+    return tempList;
+  }
+
   public calculatedRadiationMultipleFileSameName(
     Config: ConfigFile[],
     type: string,
@@ -525,6 +590,16 @@ class OperationService {
     for (let i = 0; i < list.length; i++) {
       // console.log("sumRadiation", sumPowerGeneration/list[i].map((v:Value)=> v.powerGeneration).length)
       list[i][0].powerGeneration = sum(list[i], 'powerGeneration');
+      tempList.push(list[i][0]);
+    }
+    return tempList;
+  }
+
+  public calculatedRadiationCaseMultiFileByHour(list: any,size:number) {
+    let tempList = [];
+    for (let i = 0; i < list.length; i++) {
+      // console.log("sumRadiation", sumPowerGeneration/list[i].map((v:Value)=> v.powerGeneration).length)
+      list[i][0].radiation = sum(list[i], 'radiation')/size;
       tempList.push(list[i][0]);
     }
     return tempList;
@@ -791,6 +866,49 @@ class OperationService {
 
           this.calculatedPowerGenMultipleFileAndDiffName(listOfConfig, Type.PWR, date);
 
+            // TODO: check config
+            const fileName1R = file[0].name.split('.')[0];
+            const fileName2R = file[1].name.split('.')[0];
+            const plantName1R = configRADIATION[0].plantName;
+            const plantName2R = configRADIATION2[0].plantName;
+  
+  
+            let listOfConfigR:ConfigParameter[] = [];
+  
+            // TODO: map config
+            if (fileName1R.search(plantName1R) !== -1) {
+              const config: ConfigParameter = {
+                plantName:plantName1R,
+                config:configRADIATION,
+                file:file[0].data
+              }
+              listOfConfigR.push(config);
+            } else {
+              const config: ConfigParameter = {
+                plantName:plantName1R,
+                config:configRADIATION2,
+                file:file[1].data
+              }
+              listOfConfigR.push(config)
+            }
+  
+            if (fileName2R.search(plantName2R) !== -1) {
+              const config: ConfigParameter = {
+                plantName:plantName2R,
+                config:configRADIATION2,
+                file:file[1].data
+              }
+              listOfConfigR.push(config)
+            } else {
+              const config: ConfigParameter = {
+                plantName:plantName2R,
+                config:configRADIATION,
+                file:file[0].data
+              }
+              listOfConfigR.push(config)
+            }
+
+          this.calculatedRadiationMultipleFileAndDiffName(listOfConfigR, Type.RADIATION, date);
 
           return this;
         }
