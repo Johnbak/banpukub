@@ -23,6 +23,11 @@ import {
   getRadiationDupName,
   getRadiationDifName
 } from '../functions/operations/operation';
+
+import Value from '../interface/operation/value'
+import {Type} from '../enum/OperationTypes'
+import {checkNumberNull} from '../utils/Util'
+
 dayjs.extend(customParseFormat);
 
 const _ = require('lodash');
@@ -744,81 +749,59 @@ const excelExtract = (
   key: string
 ) => {
   console.log(sheetNum);
-  // "M/d/YY HH:mm"
+  //read workbook
   const workBook = XLSX.read(data, { dateNF: 'M/d/YY HH:mm' });
-  //  const workBook = XLSX.read(data);
-  //  const workBook = XLSX.read(data,{dateNF:dateFormat, cellDates:true, cellStyles:true });
+  //get sheet number
   const sheetName = workBook.SheetNames[sheetNum - 1];
+  //get sheet name
   const sheet = workBook.Sheets[sheetName];
 
+  //column date
   columnDate = columnDate - 1;
+  //row value
   rowStart = rowStart - 1;
+  //column value
   columnValue = columnValue - 1;
-  // rowStop = XLSX.utils.decode_range(sheet['!ref']);
-  // console.log(typeof rowStop)
+
+  //get for rowstop if config rowstop eq null
   let sheetRef = XLSX.utils.decode_range(sheet['!ref']);
   if (!rowStop) {
-    //null rowStop from config
     rowStop = sheetRef.e.r;
   }
-  // console.log(demo)
-  // console.log(demo.e.r)
+
   let values: Value[] = [];
-
   for (let i = rowStart; i < rowStop; i++) {
+    //get cell from row and column
     let cell_address = { c: columnValue, r: i };
+    //extract data from row and column
     let data = XLSX.utils.encode_cell(cell_address);
+    //get cell  date from row and column
     let cell_date = { c: columnDate, r: i };
-    let dateKub = XLSX.utils.encode_cell(cell_date);
+    //extract date from row and column
+    let dateCell = XLSX.utils.encode_cell(cell_date);
 
-    // console.log(
-    //   XLSX.utils.format_cell(sheet[data]) +
-    //     '   ' +
-    //     XLSX.utils.format_cell(sheet[dateKub]) +
-    //     '    ' +
-    //     dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).get('hour') +
-    //     '    ' +
-    //     plantName +
-    //     '-' +
-    //     dayjs(date, 'YYYY-MM-DD').format('YYYYMMDD') +
-    //     dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).format('HHmm')
-    // );
-
+    //convert format date input YYYYMMDD
+    const dateInput = dayjs(date, 'YYYY-MM-DD').format('YYYYMMDD');
+    //convert format get only hour and minute HHmm
+    const dateCellHourMinute = dayjs(XLSX.utils.format_cell(sheet[dateCell]), dateFormat).format('HHmm')
+    //convert for datetime YYYY-MM-DD HH:mm
+    const dateTimeFormat = dayjs(date+dateCellHourMinute,'YYYY-MM-DDHHmm').format("YYYY-MM-DD HH:mm")
+    //format id plantName-YYYYMMDDHHmm
+    const idFormat:string = `${plantName}-${dateInput}${dateCellHourMinute}`;
+    
+    const radiation = (key !== Type.PWR)?checkNumberNull(numeral(XLSX.utils.format_cell(sheet[data]))._value):0
+    const pwr = (key === Type.PWR) ? checkNumberNull(numeral(XLSX.utils.format_cell(sheet[data]))._value): 0
+    
     let value: Value = {
-      id:
-        plantName +
-        '-' +
-        dayjs(date, 'YYYY-MM-DD').format('YYYYMMDD') +
-        dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).format(
-          'HHmm'
-        ),
+      id:idFormat,
       plantName: plantName,
-      dateTime: dayjs(
-        date +
-          dayjs(XLSX.utils.format_cell(sheet[dateKub]), dateFormat).format(
-            'HH:mm'
-          ),
-        'YYYY-MM-DDHH:mm'
-      ).format('YYYY-MM-DD HH:mm'),
-      radiation:
-        key !== Type.PWR
-          ? numeral(XLSX.utils.format_cell(sheet[data]))._value
-          : 0,
-      powerGeneration:
-        key === Type.PWR
-          ? numeral(XLSX.utils.format_cell(sheet[data]))._value
-          : 0,
+      dateTime: dateTimeFormat,
+      radiation:radiation,
+      powerGeneration:pwr,
       type: key
     };
-
     values.push(value);
   }
-
-  const dateString = dayjs(date, 'YYYY-MM-DD').format('YYYYMMDD');
-  console.log('Date: ', plantName + '-' + dateString);
-
-  console.log('_____________________________________________________');
-  // console.log(values);
   return values;
 };
 
@@ -841,23 +824,5 @@ const checkMultipleFile = (value: any) => {
   }
   return multiFile;
 };
-
-enum Type {
-  RADIATION = 'Radiation',
-  PWR = 'PowerGeneration',
-  GROUPPWR = 'GroupPowerGeneration',
-  GROUPRADIATION = 'GroupRadiation',
-  PWR_JP = '電力',
-  RADIATION_JP = '気象'
-}
-
-interface Value {
-  id: string;
-  plantName: string;
-  dateTime: Date;
-  radiation: number;
-  powerGeneration: number;
-  type: string;
-}
 
 export const operationService = new OperationService();
