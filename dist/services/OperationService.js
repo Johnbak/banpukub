@@ -348,7 +348,7 @@ class OperationService {
                     });
                 });
             }
-            console.log('test check 1 2');
+            console.log('__tests__ check 1 2');
             let summed = _(values)
                 .groupBy('id')
                 .map((objs, key) => {
