@@ -20,10 +20,10 @@ import {
     @Column({ name: 'date_time' })
     dateTime!: Date;
     
-    @Column({ name: 'radiation' })
+    @Column({ name: 'radiation',type: 'decimal', precision: 18, scale: 2, default: 0 })
     radiation!: number;
 
-    @Column({ name: 'power_generation' })
+    @Column({ name: 'power_generation',type: 'decimal', precision: 18, scale: 2, default: 0 })
     powerGeneration!: number;
 
     @UpdateDateColumn()

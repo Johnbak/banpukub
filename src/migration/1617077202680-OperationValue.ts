@@ -23,11 +23,11 @@ export class OperationValue1617077202680 implements MigrationInterface {
           },
           {
             name: 'radiation',
-            type: 'float(53)'
+            type: 'Decimal(18,2)'
           },
           {
             name: 'power_generation',
-            type: 'float(53)'
+            type: 'Decimal(18,2)'
           },
           {
             name: 'updated_at',
