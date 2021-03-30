@@ -1,9 +1,10 @@
 import { getRepository } from 'typeorm';
 import { NextFunction, Request, Response } from 'express';
 import { User } from '../entity/User';
-
+import { EnigmaValue } from '../entity/value.entity';
 export class UserController {
   private userRepository = getRepository(User);
+  private valueRepository = getRepository(EnigmaValue);
 
   async all(request: Request, response: Response, next: NextFunction) {
     return this.userRepository.find();
@@ -15,7 +16,8 @@ export class UserController {
 
   async save(request: Request, response: Response, next: NextFunction) {
     // operationService.createUser();
-    return this.userRepository.save(request.body);
+    // return this.userRepository.save(request.body);
+    return this.valueRepository.save(request.body)
   }
 
   async remove(request: Request, response: Response, next: NextFunction) {
