@@ -29,10 +29,10 @@ export class OperationController {
     return await this.configFileRepository.save(request.body);
   }
 
-  async upload(request: Request, response: Response, next: NextFunction) {
-    let data = operationService.upload(request, request.body.date);
-    console.log(request.body.date);
-    response.status(200);
-    return data;
-  }
+  // async upload(request: Request, response: Response, next: NextFunction) {
+  //   let data = operationService.upload(request, request.body.date);
+  //   console.log(request.body.date);
+  //   response.status(200);
+  //   return data;
+  // }
 }

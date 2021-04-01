@@ -53,14 +53,14 @@ export const AppRoutes = [
   },
   {
     method: 'post',
-    route: '/operations/uploads',
-    controller: OperationController,
+    route: '/file',
+    controller: FileController,
     action: 'upload'
   },
   {
     method: 'post',
-    route: '/file',
+    route: '/filebudget',
     controller: FileController,
-    action: 'upload'
+    action: 'readBudget'
   },
 ];

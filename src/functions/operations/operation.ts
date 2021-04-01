@@ -4,6 +4,7 @@ import Value from '../../interface/operation/value';
 import { calculate, CALCULATE } from '../../config/calculateConfig';
 
 const customParseFormat = require('dayjs/plugin/customParseFormat');
+
 dayjs.extend(customParseFormat);
 
 export const groupMinutesToHour = (list: any[] = []) => {
@@ -11,7 +12,7 @@ export const groupMinutesToHour = (list: any[] = []) => {
 
   // TODO: loop for add key hour
   for (let i = 0; i < list.length; i++) {
-    //TODO: add key hour
+  //TODO: add key hour
     list[i].hours = dayjs(list[i].dateTime).get('h');
     tempList.push(list[i]);
   }
@@ -166,7 +167,6 @@ export const getPowerGen = (list: any[]): Value[] => {
       const listValue2 = _.groupBy(list[1], 'hours');
       tempForCalculate.push(...listValue1[i.toString()]);
       tempForCalculate.push(...listValue2[i.toString()]);
-      console.log('tempForCalculate:', tempForCalculate);
 
       const getTemp = listValue1[i.toString()]
 

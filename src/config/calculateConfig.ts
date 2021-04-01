@@ -50,19 +50,19 @@ const calculate = (key:string='', list:any[]) :number => {
       result = calculateRadiation(list)
       break;
     case 'calculateMultiFileDupPowerGen':
-      result =  calculatePowerGenMultiFileDupName(list);
+      result = calculatePowerGenMultiFileDupName(list);
       break;
     case 'calculateMultiFileDupRadiation':
-      result =  calculateRadiationMultiFileDupName(list);
+      result = calculateRadiationMultiFileDupName(list);
       break;
     case 'calculateMultiFileDifPowerGen':
-      result =  calculatePowerGenMultiFileDiffName(list)
+      result = calculatePowerGenMultiFileDiffName(list)
       break;
     case 'calculateMultiFileDifRadiation':
-      result =  calculateRadiationMultiFileDiffName(list);
+      result = calculateRadiationMultiFileDiffName(list);
       break;
     case 'calculateMultiFileDifRadiationDivide2000':
-      result =  calculateRadiationMultiFileDiffNameDivide2000(list);
+      result = calculateRadiationMultiFileDiffNameDivide2000(list);
       break;
     default:
       result = 0;
